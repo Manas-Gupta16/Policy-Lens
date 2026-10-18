@@ -98,3 +98,98 @@ Policy-Lens/
 │   └── .env.example
 └── client/                 # React + Vite frontend (future milestone)
 ```
+
+---
+
+## 5. Open Questions & Theme Tracking
+
+> [!WARNING]
+> **Theme Discrepancy**: The internal Homingo participant dashboard lists the theme as **"AI for real local commerce"**, whereas the public Edition 01 page states **"Open theme"**.
+> - **Status**: Unresolved until official problem statements are released on 21 Nov 2026.
+> - **Action**: Treat PolicyLens purely as a technical practice project to master RAG, diffing, embeddings, evaluation, and latency/cost optimization.
+> - **Rule**: Always verify rules and announcements directly on the official hackathon site ([https://hackathon.homingo.co.in/hackathons/edition-01](https://hackathon.homingo.co.in/hackathons/edition-01)) rather than guessing or assuming.
+
+---
+
+## 6. Data Model
+
+### Document Schema
+* `policyId` (String): Unique identifier linking all versions of a policy.
+* `title` (String): Title of the policy document.
+* `version` (String / Number): Semantic version or version indicator (e.g., "v1", "v2").
+* `effectiveDate` (Date): Effective date for the specific document revision.
+* `language` (String): Language code (e.g., "en", "hi").
+* `text` (String): Full document text body.
+
+### Chunk Schema
+* `docId` (ObjectId): Reference to the parent Document.
+* `policyId` (String): Associated policy identifier for filtering.
+* `version` (String / Number): Associated version number.
+* `effectiveDate` (Date): Inherited effective date for temporal filtering.
+* `text` (String): Content snippet / chunk.
+* `embedding` (Array of Numbers): Dense vector embedding generated for the chunk.
+
+### QueryLog Schema
+* `question` (String): Raw user input.
+* `intent` (String): Extracted structured intent (`lookup`, `change_tracking`, etc.).
+* `latency` (Number): Total response latency in milliseconds.
+* `tokens` (Object / Number): Prompt and candidate token breakdown.
+* `found` (Boolean): Whether relevant grounded content was discovered or if the system fell back to "not found".
+
+---
+
+## 7. API Contract (Draft)
+
+All request bodies must be validated with Zod. Standard central error responses follow `{ error: { code, message } }` with proper HTTP status codes.
+
+* **`POST /api/ask`**
+  * Body: `{ question }`
+  * Response: `{ answer, usage, latencyMs }`
+* **`POST /api/search`**
+  * Body: `{ question }`
+  * Response: `{ answer, sources: [], found, usage, latencyMs }`
+* **`POST /api/changes`**
+  * Body: `{ since, topic? }`
+  * Response: `{ changes: [] }`
+* **`POST /api/ask-policies`**
+  * Body: `{ question }`
+  * Response: Dynamic router delegating to lookup or change-tracking pipeline based on classified intent.
+* **`POST /api/documents`**
+  * Body: `{ title, text, version, effectiveDate, language }`
+  * Response: `{ docId, chunkCount }`
+* **`GET /api/health`**
+  * Response: `{ status: "ok" }`
+
+---
+
+## 8. Evals & Benchmarking
+
+Target benchmark: ~30 synthetic evaluation questions with verified ground-truth answers:
+* ~10 Direct lookup queries
+* ~8 "Changed since [date]" queries
+* ~3 Multi-policy cross-referencing queries
+* ~5 Unanswerable out-of-scope queries (must trigger honest "not found" fallback)
+* ~4 Hindi language queries
+
+### Scoring & Metrics
+* **Separate Scoring**: Evaluate retrieval accuracy (Did we fetch the right chunks?) separately from answer quality/generation faithfulness (Did the LLM answer honestly from the context without hallucinating?).
+* **Operational Telemetry**: Log latency percentiles ($p50$, $p95$), input/output token counts, and estimated cost per query.
+
+---
+
+## 9. 28-Day Preparation Plan (17 Oct – 13 Nov)
+
+Estimated time commitment: ~2 hours/day. Target: fully working end-to-end practice app by **Day 21 (6 Nov)**.
+
+* **Week 1 (Oct 17 – Oct 23)**: LLM API fundamentals, Express REST API scaffolding, Zod schema validation, structured JSON outputs, initial React client.
+* **Week 2 (Oct 24 – Oct 30)**: Synthetic corpus generation, chunking strategies, embeddings in MongoDB, in-memory cosine similarity retrieval, grounded answering, and baseline evaluation framework.
+* **Week 3 (Oct 31 – Nov 6)**: Deterministic change tracking & diffing pipeline, Hindi language query support, interactive results UI, refusal guardrails. *(End-to-end working milestone: 6 Nov)*.
+* **Week 4 (Nov 7 – Nov 13)**: Deployment, mock hackathon presentation drills, evaluation results benchmarking table, demo video walkthrough.
+
+---
+
+## 10. Team Status
+
+* **Team**: Catalysts
+* **Roster**: Captain (1 member currently).
+* **Deadline**: Official team formation closes on 18 Nov 2026.
